@@ -1,0 +1,149 @@
+/* =============================================
+   THE Holocene — Global Design System
+   Pure Vanilla CSS, no Tailwind, no frameworks
+   ============================================= */
+
+/* ── Imports ── */
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap");
+@import "bootstrap/dist/css/bootstrap.min.css";
+
+:root {
+  --holocene-green: #0f3d2e;
+  --holocene-green-soft: #14503c;
+  --holocene-green-dark: #082318;
+  --holocene-cream: #f6f1e4;
+  --holocene-offwhite: #fbf9f3;
+  --holocene-gold: #b8925a;
+  --holocene-gold-soft: #d4b483;
+  --holocene-ink: #1a1a1a;
+  --holocene-muted: #6b6b6b;
+  --holocene-line: #e6dfd0;
+  --holocene-danger: #842029;
+
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--holocene-ink);
+  background: var(--holocene-offwhite);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-serif);
+  color: var(--holocene-ink);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--holocene-green);
+  text-decoration: none;
+}
+a:hover { color: var(--holocene-gold); }
+
+
+/* =============================================
+   ANIMATIONS
+   ============================================= */
+
+/* Fade in up — used on page sections */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade in — used on hero */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Pulse for skeleton loading */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* Ticker scroll */
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Skeleton shimmer */
+.holocene-skeleton {
+  background: linear-gradient(90deg, #e8e2d5 25%, #f0ebe0 50%, #e8e2d5 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+/* Card hover animate-in */
+.holocene-card-animate {
+  animation: fadeInUp 0.5s ease both;
+}
+
+/* Fade-in used on hero section */
+.holocene-fade-in {
+  animation: fadeIn 0.7s ease both;
+}
+
+/* ── Breaking News Ticker ── */
+.ticker-track {
+  display: flex;
+  align-items: center;
+  animation: tickerScroll 30s linear infinite;
+  width: max-content;
+  padding: 0 1rem;
+}
+.ticker-track:hover { animation-play-state: paused; }
+
+/* ── Category chip hover (extra safety) ── */
+.holocene-cat-chip:hover {
+  background: var(--holocene-green) !important;
+  color: var(--holocene-cream) !important;
+  border-color: var(--holocene-green) !important;
+}
+
+/* ── Blog card lift ── */
+.holocene-blog-card {
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+.holocene-blog-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 36px rgba(15, 61, 46, 0.1);
+}
+
+/* ── Navbar transition ── */
+header { transition: box-shadow 0.2s; }
+
+/* ── Form inputs ── */
+.form-control:focus {
+  border-color: var(--holocene-green);
+  box-shadow: 0 0 0 0.2rem rgba(15, 61, 46, 0.15);
+}
+
+/* ── Buttons ── */
+.btn { transition: opacity 0.2s, transform 0.2s; }
+.btn:active { transform: scale(0.97); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .ticker-track { animation-duration: 18s; }
+}
+
+/* ── Hide scrollbar on category strip ── */
+.holocene-cat-strip::-webkit-scrollbar { display: none; }
+.holocene-cat-strip { scrollbar-width: none; }

@@ -79,7 +79,9 @@ mongoose
     process.exit(1);
   });
 
-const PORT = process.env.PORT || 4000;
+
+
+const PORT = process.env.PORT || 4001;
 app.listen(PORT, (err) => {
   if (err) console.log("Cannot start server", err);
   else console.log(`🚀 Server started on port ${PORT}`);

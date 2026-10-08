@@ -293,7 +293,7 @@ const forgotPassword = async (req, res) => {
     const resetUrl = `${frontendBase}/reset-password/${rawToken}`;
 
     let emailSent = false;
-    if (process.env.APP_EMAIL && process.env.APP_PASSWORD && transporter) {
+    if (process.env.APP_EMAIL && process.env.APP_PASS && transporter) {
       try {
         await transporter.sendMail({
           from: process.env.APP_EMAIL,

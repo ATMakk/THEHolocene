@@ -7,17 +7,20 @@ const transporter = require("../utils/mailer");
 
 const registerUser = async (req, res) => {
   const { firstname, lastname, email, password, tag, photo } = req.body;
+  const normalizedEmail =
+    typeof email === "string" ? email.trim().toLowerCase() : "";
+  const normalizedTag =
+    typeof tag === "string" && tag.trim() ? tag.trim() : undefined;
 
   try {
-    if (!firstname || !lastname || !email || !password) {
+    if (!firstname || !lastname || !normalizedEmail || !password) {
       return res.status(400).send({ message: "Missing required fields" });
     }
 
     const saltround = await bcryptjs.genSalt(10);
     const hashPass = await bcryptjs.hash(password, saltround);
 
-    const number = `${Math.ceil(Math.random() * 1000)}`.padStart(4, "0");
-    const generatedID = `CC${number}`;
+    const generatedID = `CC${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
 
     let profilePicture = {};
     if (photo) {
@@ -33,8 +36,8 @@ const registerUser = async (req, res) => {
     const user = await UserModel.create({
       firstname,
       lastname,
-      email,
-      tag,
+      email: normalizedEmail,
+      tag: normalizedTag,
       password: hashPass,
       idNumber: generatedID,
       profilePicture,
@@ -51,9 +54,9 @@ const registerUser = async (req, res) => {
       data: {
         firstname,
         lastname,
-        email,
+        email: normalizedEmail,
         role: user.role,
-        tag: tag || null,
+        tag: normalizedTag || null,
         idNumber: generatedID,
         token,
         photo: user.profilePicture?.secure_url || null,
@@ -71,7 +74,11 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const isUser = await UserModel.findOne({ email }).select("+password");
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
+    const isUser = await UserModel.findOne({ email: normalizedEmail }).select(
+      "+password"
+    );
     if (!isUser) return res.status(400).send({ message: "Account does not exist" });
 
     const isMatch = await bcryptjs.compare(password, isUser.password);
@@ -111,8 +118,7 @@ const socialLoginUser = async (req, res) => {
     let user = await UserModel.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      const number = `${Math.ceil(Math.random() * 1000)}`.padStart(4, "0");
-      const generatedID = `SOC${number}`;
+      const generatedID = `SOC${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
 
       user = await UserModel.create({
         firstname: firstname || "User",

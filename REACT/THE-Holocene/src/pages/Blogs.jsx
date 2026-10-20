@@ -154,7 +154,8 @@ export default function Blogs() {
           </div>
 
           {pages > 1 && (
-            <div className="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+            <nav className="d-flex justify-content-center align-items-center gap-2 mt-4 flex-wrap">
+              {/* Prev */}
               <button
                 className="btn btn-sm btn-outline-dark"
                 disabled={page === 1}
@@ -162,20 +163,64 @@ export default function Blogs() {
               >
                 ← Prev
               </button>
-              {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  className="btn btn-sm"
-                  style={{
-                    background: n === page ? "var(--holocene-green)" : "transparent",
-                    color: n === page ? "var(--holocene-cream)" : "var(--holocene-green)",
-                    border: "1px solid var(--holocene-green)",
-                  }}
-                  onClick={() => load(n)}
-                >
-                  {n}
-                </button>
-              ))}
+
+              {/* First page + leading ellipsis */}
+              {page > 3 && (
+                <>
+                  <button
+                    className="btn btn-sm"
+                    style={{
+                      background: "transparent",
+                      color: "var(--holocene-green)",
+                      border: "1px solid var(--holocene-green)",
+                    }}
+                    onClick={() => load(1)}
+                  >
+                    1
+                  </button>
+                  {page > 4 && <span className="align-self-center px-1">…</span>}
+                </>
+              )}
+
+              {/* Window of 5 pages around current */}
+              {Array.from({ length: pages }, (_, i) => i + 1)
+                .filter(
+                  (n) => n >= Math.max(1, page - 2) && n <= Math.min(pages, page + 2)
+                )
+                .map((n) => (
+                  <button
+                    key={n}
+                    className="btn btn-sm"
+                    style={{
+                      background: n === page ? "var(--holocene-green)" : "transparent",
+                      color: n === page ? "var(--holocene-cream)" : "var(--holocene-green)",
+                      border: "1px solid var(--holocene-green)",
+                    }}
+                    onClick={() => load(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+
+              {/* Last page + trailing ellipsis */}
+              {page < pages - 2 && (
+                <>
+                  {page < pages - 3 && <span className="align-self-center px-1">…</span>}
+                  <button
+                    className="btn btn-sm"
+                    style={{
+                      background: "transparent",
+                      color: "var(--holocene-green)",
+                      border: "1px solid var(--holocene-green)",
+                    }}
+                    onClick={() => load(pages)}
+                  >
+                    {pages}
+                  </button>
+                </>
+              )}
+
+              {/* Next */}
               <button
                 className="btn btn-sm btn-outline-dark"
                 disabled={page === pages}
@@ -183,7 +228,7 @@ export default function Blogs() {
               >
                 Next →
               </button>
-            </div>
+            </nav>
           )}
         </>
       )}

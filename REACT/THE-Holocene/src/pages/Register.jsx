@@ -82,7 +82,8 @@ export default function Register() {
             validationSchema={schema}
             onSubmit={async (values, { setSubmitting, setStatus }) => {
               try {
-                const { confirmPassword, ...payload } = values;
+                const payload = { ...values };
+                delete payload.confirmPassword;
                 if (photo) payload.photo = photo;
                 await register(payload);
                 navigate("/");

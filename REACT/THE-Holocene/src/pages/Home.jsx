@@ -168,65 +168,6 @@ function HeroCarousel({ slides }) {
 }
 
 // ──────────────────────────────────────────────
-// BREAKING NEWS TICKER
-// ──────────────────────────────────────────────
-function NewsTicker({ items }) {
-  if (!items.length) return null;
-  const repeated = [...items, ...items];
-  return (
-    <div
-      style={{
-        background: "var(--holocene-green)",
-        color: "var(--holocene-cream)",
-        display: "flex",
-        alignItems: "center",
-        overflow: "hidden",
-        height: 38,
-        fontSize: "0.82rem",
-      }}
-    >
-      <span
-        style={{
-          background: "var(--holocene-gold)",
-          color: "#fff",
-          padding: "0 1rem",
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          flexShrink: 0,
-          textTransform: "uppercase",
-          fontSize: "0.7rem",
-        }}
-      >
-        LIVE
-      </span>
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        <div className="ticker-track">
-          {repeated.map((b, i) => (
-            <Link
-              key={i}
-              to={"/blogs/" + b._id}
-              style={{
-                color: "var(--holocene-cream)",
-                marginRight: "3rem",
-                whiteSpace: "nowrap",
-                fontWeight: i % items.length === 0 ? 600 : 400,
-                textDecoration: "none",
-                flexShrink: 0,
-              }}
-            >
-              {b.title}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ──────────────────────────────────────────────
 // CATEGORY STRIP
 // ──────────────────────────────────────────────
 const DISPLAY_CATEGORIES = [
@@ -364,9 +305,6 @@ export default function Home() {
 
   return (
     <>
-      {/* BREAKING TICKER */}
-      {!loading && trending.length > 0 && <NewsTicker items={trending} />}
-
       {/* HERO */}
       <section style={{ background: "var(--holocene-offwhite)", padding: "2rem 0 1.5rem" }}>
         <div className="container">

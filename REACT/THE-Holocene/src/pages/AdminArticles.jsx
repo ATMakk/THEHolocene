@@ -34,11 +34,53 @@ export default function AdminArticles() {
   };
 
   useEffect(() => {
-    setStatus(searchParams.get("status") || "");
-    setSearchTerm(searchParams.get("search") || "");
     load(searchParams.get("status") || "", searchParams.get("search") || "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (searchTerm.trim()) params.set("search", searchTerm.trim());
+    setSearchParams(params);
+  };
+
+  const handleStatusChange = (nextStatus) => {
+    setStatus(nextStatus);
+    const params = new URLSearchParams();
+    if (nextStatus) params.set("status", nextStatus);
+    if (searchTerm.trim()) params.set("search", searchTerm.trim());
+    setSearchParams(params);
+  };
+
+  const handleApprove = async (blog) => {
+    try {
+      await approveBlog(blog._id);
+      await load();
+    } catch (err) {
+      alert(err.message || "Cannot approve article");
+    }
+  };
+
+  const handleFeature = async (blog) => {
+    try {
+      await featureBlog(blog._id, { isFeatured: !blog.isFeatured });
+      await load();
+    } catch (err) {
+      alert(err.message || "Cannot update featured status");
+    }
+  };
+
+  const handleDelete = async (blogId) => {
+    if (!window.confirm("Delete this article? This cannot be undone.")) return;
+    try {
+      await adminDeleteBlog(blogId);
+      await load();
+    } catch (err) {
+      alert(err.message || "Cannot delete article");
+    }
+  };
 
   const handleCleanup = async () => {
     if (!window.confirm("Clean up automated news articles older than 30 days? User-authored, bookmarked, and featured articles will be preserved.")) return;

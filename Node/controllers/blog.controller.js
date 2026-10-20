@@ -613,9 +613,12 @@ const ingestNewsFromAPI = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    const status = error.statusCode || 500;
+    const status = error.statusCode || error.response?.status || 500;
     res.status(status).send({
-      message: error.message || "Cannot fetch news at this time",
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        "Cannot fetch news at this time",
     });
   }
 };

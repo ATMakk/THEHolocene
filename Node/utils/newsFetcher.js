@@ -2,10 +2,10 @@ const axios = require("axios");
 const { CATEGORY_TO_NEWS_QUERY } = require("../constants/categories");
 
 let lastFetchTime = 0;
-const RATE_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
+const RATE_LIMIT_MS = 60 * 60 * 1000; // 60 minutes
 
 /**
- * Fetch news from RapidAPI with 30-min rate limit.
+ * Fetch news from RapidAPI with 60-min rate limit.
  * @param {Object} options
  * @param {string} options.category - one of CATEGORIES
  * @param {string} [options.locale="en-US"]

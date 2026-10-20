@@ -5,9 +5,12 @@ const CommentModel = require("../models/comment.model");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
+const crypto = require("crypto");
 
 const registerAdmin = async (req, res) => {
   const { firstname, lastname, email, password, tag, photo } = req.body;
+  const normalizedTag =
+    typeof tag === "string" && tag.trim() ? tag.trim() : undefined;
 
   try {
     if (!firstname || !lastname || !email || !password) {
@@ -16,8 +19,7 @@ const registerAdmin = async (req, res) => {
     const saltround = await bcryptjs.genSalt(10);
     const hashPass = await bcryptjs.hash(password, saltround);
 
-    const number = `${Math.ceil(Math.random() * 1000)}`.padStart(4, "0");
-    const generatedID = `CC${number}`;
+    const generatedID = `CC${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
 
     let profilePicture = {};
     if (photo) {
@@ -34,7 +36,7 @@ const registerAdmin = async (req, res) => {
       firstname,
       lastname,
       email,
-      tag,
+      tag: normalizedTag,
       password: hashPass,
       idNumber: generatedID,
       profilePicture,
@@ -53,7 +55,7 @@ const registerAdmin = async (req, res) => {
         lastname,
         email,
         role: admin.role,
-        tag: tag || null,
+        tag: normalizedTag || null,
         idNumber: generatedID,
         token,
         photo: admin.profilePicture?.secure_url || null,
@@ -194,15 +196,13 @@ const createOperator = async (req, res) => {
       password,
       await bcryptjs.genSalt(10)
     );
-    const number = `${Math.ceil(Math.random() * 1000)}`.padStart(4, "0");
-
     const operator = await AdminModel.create({
       firstname,
       lastname,
       email,
       tag,
       password: hashPass,
-      idNumber: `CC${number}`,
+      idNumber: `CC${crypto.randomBytes(5).toString("hex").toUpperCase()}`,
       role: "operator",
     });
 

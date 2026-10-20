@@ -3,11 +3,14 @@
   "services": {
     "my_frontend": {
       "root": "REACT/",
-      "framework": "vite"
+      "framework": "vite",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build"
     },
     "my_backend": {
       "root": "Node/",
       "framework": "express",
+      "installCommand": "npm install",
       "buildCommand": "null"
     }
   },

@@ -3,13 +3,12 @@
   "services": {
     "my_frontend": {
       "root": "REACT/",
-      "framework": "vite",
-      "buildCommand": "npm install && npm run build"
+      "framework": "vite"
     },
     "my_backend": {
       "root": "Node/",
       "framework": "express",
-      "buildCommand": "npm install"
+      "buildCommand": "null"
     }
   },
   "rewrites": [

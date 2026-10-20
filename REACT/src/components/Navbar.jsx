@@ -58,7 +58,7 @@ function NewsTicker({ items }) {
           alignItems: "center",
           flexShrink: 0,
           textTransform: "uppercase",
-          fontSize: "0.7rem",
+          fontSize: "0.75rem",
         }}
       >
         Live
@@ -71,7 +71,7 @@ function NewsTicker({ items }) {
               to={`/blogs/${blog._id}`}
               style={{
                 color: "var(--holocene-cream)",
-                marginRight: "3rem",
+                marginRight: "2rem",
                 whiteSpace: "nowrap",
                 textDecoration: "none",
                 flexShrink: 0,

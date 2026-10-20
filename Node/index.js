@@ -16,23 +16,44 @@ dotenv.config();
 
 const app = express();
 
-// CORS: allow frontend dev server and any localhost origins
+// ---------------------------------------------------------------------------
+// CORS
+// Origins must match exactly: protocol + host (+ port), no trailing slash.
+// FRONTEND_URL may hold one URL or several separated by commas.
+// ---------------------------------------------------------------------------
+const normalize = (url) => url.trim().replace(/\/$/, "");
+
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173",
+  // Local development
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
-];
+  // Production (Vercel)
+  "https://theholocene.vercel.app",
+  "https://theholocene-vc8o.vercel.app",
+  // Anything extra set in the environment
+  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : []),
+]
+  .map(normalize)
+  .filter(Boolean);
+
+// Any port on localhost / 127.0.0.1 (dev servers can change ports)
+const localhostPattern = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (e.g. mobile apps, curl, Postman)
+      // Allow requests with no origin (e.g. mobile apps, curl, Postman, server-to-server)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.some((o) => origin.startsWith(o.replace(/\/$/, "")))) {
+
+      if (allowedOrigins.includes(origin) || localhostPattern.test(origin)) {
         return callback(null, true);
       }
-      return callback(new Error("Not allowed by CORS"));
+
+      // Log the blocked origin so it's easy to spot in Vercel logs,
+      // and reject without throwing (avoids a 500 for a CORS rejection).
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -78,8 +99,6 @@ mongoose
     console.error("❌ Cannot connect to DB:", err.message);
     process.exit(1);
   });
-
-
 
 const PORT = process.env.PORT || 4001;
 app.listen(PORT, (err) => {

@@ -1,27 +1,17 @@
 {
-  "$schema": "https://vercel.sh",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
     "my_frontend": {
       "root": "REACT/",
-      "framework": "vite",
-      "installCommand": "npm install",
-      "buildCommand": "npm run build"
+      "framework": "vite"
     },
     "my_backend": {
       "root": "Node/",
-      "framework": "express",
-      "installCommand": "npm install",
-      "buildCommand": ""
+      "framework": "express"
     }
   },
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": { "service": "my_backend" }
-    },
-    {
-      "source": "/(.*)",
-      "destination": { "service": "my_frontend" }
-    }
+    { "source": "/api/(.*)", "destination": { "service": "my_backend" } },
+    { "source": "/(.*)", "destination": { "service": "my_frontend" } }
   ]
 }

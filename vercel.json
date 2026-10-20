@@ -11,7 +11,7 @@
       "root": "Node/",
       "framework": "express",
       "installCommand": "npm install",
-      "buildCommand": "null"
+      "buildCommand": ""
     }
   },
   "rewrites": [

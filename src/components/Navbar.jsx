@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
+import { getTrendingBlogs } from "../API/index.js";
 
 const CATEGORIES = [
   "all",
@@ -16,16 +17,131 @@ const CATEGORIES = [
   "world",
 ];
 
+// Reusable inline style for desktop nav links
+const navLinkStyle = ({ isActive }) => ({
+  fontWeight: isActive ? 700 : 500,
+  color: isActive ? "var(--holocene-green)" : "var(--holocene-ink)",
+  textDecoration: "none",
+  fontSize: "0.95rem",
+  transition: "color 0.15s ease",
+  whiteSpace: "nowrap",
+});
+
+function NewsTicker({ items }) {
+  if (!items.length) return null;
+
+  const repeated = [...items, ...items];
+  const timestamp = new Date();
+
+  return (
+    <div
+      aria-label="Breaking news"
+      style={{
+        background: "var(--holocene-green)",
+        color: "var(--holocene-cream)",
+        display: "flex",
+        alignItems: "center",
+        overflow: "hidden",
+        height: 38,
+        fontSize: "0.82rem",
+      }}
+    >
+      <span
+        style={{
+          background: "red",
+          color: "#fff",
+          padding: "0 1rem",
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          flexShrink: 0,
+          textTransform: "uppercase",
+          fontSize: "0.7rem",
+        }}
+      >
+        Live
+      </span>
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        <div className="ticker-track">
+          {repeated.map((blog, index) => (
+            <Link
+              key={`${blog._id}-${index}`}
+              to={`/blogs/${blog._id}`}
+              style={{
+                color: "var(--holocene-cream)",
+                marginRight: "3rem",
+                whiteSpace: "nowrap",
+                textDecoration: "none",
+                flexShrink: 0,
+              }}
+            >
+              {blog.title}
+            </Link>
+          ))}
+        </div>
+      </div>
+      <time
+        className="d-none d-md-inline"
+        dateTime={timestamp.toISOString()}
+        style={{
+          
+          flexShrink: 0,
+          padding: "0.4rem 1rem",
+          opacity: 0.9,
+          whiteSpace: "nowrap",
+          borderLeft: "1px solid rgba(255,255,255,0.15)",
+          fontSize: "0.85rem",
+        }}
+      >
+        {timestamp.toLocaleDateString(undefined, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}
+      </time>
+    </div>
+  );
+}
+
 export default function Navbar() {
   const { user, isAuth, canAdmin, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [trending, setTrending] = useState([]);
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
-  const [selectedCat, setSelectedCat] = useState(searchParams.get("category") || "all");
+  const [selectedCat, setSelectedCat] = useState(
+    searchParams.get("category") || "all"
+  );
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getTrendingBlogs({ limit: 6 })
+      .then((response) => {
+        if (!cancelled) setTrending(response.data?.data || []);
+      })
+      .catch((error) => {
+        console.error("Failed to load breaking news", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Keep local state in sync with URL changes (back/forward, deep links)
+  useEffect(() => {
+    setSearchTerm(searchParams.get("search") || "");
+    setSelectedCat(searchParams.get("category") || "all");
+  }, [searchParams]);
 
   const handleLogout = () => {
     logout();
+    setOpen(false);
     navigate("/");
   };
 
@@ -34,8 +150,11 @@ export default function Navbar() {
     const params = new URLSearchParams();
     if (searchTerm.trim()) params.set("search", searchTerm.trim());
     if (selectedCat && selectedCat !== "all") params.set("category", selectedCat);
+    setOpen(false);
     navigate(`/blogs?${params.toString()}`);
   };
+
+  const closeMobile = () => setOpen(false);
 
   return (
     <header
@@ -43,164 +162,165 @@ export default function Navbar() {
         position: "sticky",
         top: 0,
         zIndex: 1050,
+        width: "100%",
         background: "#ffffff",
-        borderBottom: "1px solid var(--holocene-line)",
         boxShadow: "0 2px 15px rgba(0,0,0,0.06)",
       }}
     >
-      {/* Top Utility Bar */}
-      <div style={{ background: "var(--holocene-green)", color: "var(--holocene-cream)" }}>
+      <NewsTicker items={trending} />
+
+      <nav
+        className="container d-flex align-items-center justify-content-between gap-3"
+        style={{
+          paddingTop: "0.625rem",
+          paddingBottom: "0.625rem",
+          borderBottom: "1px solid var(--holocene-line)",
+        }}
+      >
+        {/* ---------- LEFT: Brand + Nav Links ---------- */}
         <div
-          className="container d-flex justify-content-between align-items-center py-1.5"
-          style={{ fontSize: "0.75rem", letterSpacing: "0.12em", textTransform: "uppercase" }}
+          className="d-flex align-items-center gap-5"
+          style={{ minWidth: 0, flexShrink: 0 }}
         >
-          <div className="d-flex align-items-center gap-2">
-            <span style={{ color: "var(--holocene-gold)", fontWeight: 700 }}>● LIVE</span>
-            <span>THE HOLOCENE NEWS DESK & MEDIA HOUSE</span>
+          {/* Brand */}
+          <Link
+            to="/"
+            onClick={closeMobile}
+            className="d-flex align-items-center gap-2"
+            style={{ textDecoration: "none", flexShrink: 0 }}
+            aria-label="The Holocene News Desk — Home"
+          >
+            <div style={{ fontFamily: "var(--font-serif)", lineHeight: 1.05 }}>
+              <div
+                style={{
+                  fontSize: "0.58rem",
+                  letterSpacing: "0.35em",
+                  color: "var(--holocene-gold)",
+                  fontWeight: 700,
+                }}
+              >
+                THE
+              </div>
+              <div
+                style={{
+                  fontSize: "1.65rem",
+                  fontWeight: 800,
+                  color: "var(--holocene-green)",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Holocene
+              </div>
+              <div
+                style={{
+                  fontSize: "0.58rem",
+                  letterSpacing: "0.22em",
+                  color: "var(--holocene-muted)",
+                  textTransform: "uppercase",
+                }}
+              >
+                News Desk &amp; Agency
+              </div>
+            </div>
+          </Link>
+
+          {/* Desktop Nav Links — grouped right after brand */}
+          <div className="d-none d-lg-flex gap-4 align-items-center">
+            <NavLink to="/" end style={navLinkStyle}>
+              Home
+            </NavLink>
+            <NavLink to="/blogs" style={navLinkStyle}>
+              Articles
+            </NavLink>
+            <NavLink to="/about" style={navLinkStyle}>
+              About Us
+            </NavLink>
           </div>
-          <span className="d-none d-md-inline" style={{ letterSpacing: 0, textTransform: "none", opacity: 0.9 }}>
-            {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </span>
         </div>
-      </div>
 
-      {/* Main Navigation Bar */}
-      <nav className="container py-2.5 d-flex align-items-center justify-content-between gap-3">
-        {/* Brand Logo tailored to THE Holocene News Desk / Agency */}
-        <Link to="/" className="d-flex align-items-center gap-2.5" style={{ textDecoration: "none" }}>
-          {/* Custom Holocene Media Emblem Icon */}
-          <svg width="38" height="38" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100" height="100" rx="20" fill="var(--holocene-green)" />
-            <circle cx="50" cy="50" r="34" stroke="var(--holocene-gold)" strokeWidth="3" fill="none" strokeDasharray="6 4" />
-            <path d="M30 36H70M30 50H70M30 64H52" stroke="var(--holocene-cream)" strokeWidth="5" strokeLinecap="round" />
-            <circle cx="64" cy="64" r="7" fill="var(--holocene-gold)" />
-          </svg>
-
-          <div style={{ fontFamily: "var(--font-serif)", lineHeight: 1.05 }}>
-            <div style={{ fontSize: "0.58rem", letterSpacing: "0.35em", color: "var(--holocene-gold)", fontWeight: 700 }}>
-              THE
-            </div>
-            <div style={{ fontSize: "1.65rem", fontWeight: 800, color: "var(--holocene-green)", letterSpacing: "-0.02em" }}>
-              Holocene
-            </div>
-            <div style={{ fontSize: "0.58rem", letterSpacing: "0.22em", color: "var(--holocene-muted)", textTransform: "uppercase" }}>
-              News Desk & Agency
-            </div>
-          </div>
-        </Link>
-
-        {/* Integrated Category & Keyword Search Bar */}
-        <form
-          onSubmit={handleSearchSubmit}
-          className="d-none d-lg-flex align-items-center"
-          style={{
-            background: "#f8f9fa",
-            border: "1px solid var(--holocene-line)",
-            borderRadius: 24,
-            padding: "2px 6px 2px 14px",
-            maxWidth: 460,
-            width: "100%",
-          }}
+        {/* ---------- RIGHT: Compact Search + Auth Actions ---------- */}
+        <div
+          className="d-none d-lg-flex align-items-center gap-2"
+          style={{ flexShrink: 0 }}
         >
-          <select
-            value={selectedCat}
-            onChange={(e) => setSelectedCat(e.target.value)}
+          {/* Compact search — far right */}
+          <form
+            onSubmit={handleSearchSubmit}
+            className="d-flex align-items-center"
+            role="search"
             style={{
-              border: "none",
-              background: "transparent",
-              fontSize: "0.8rem",
-              color: "var(--holocene-ink)",
-              fontWeight: 600,
-              cursor: "pointer",
-              outline: "none",
-              marginRight: 8,
-              textTransform: "capitalize",
+              background: "#f8f9fa",
+              border: "1px solid var(--holocene-line)",
+              borderRadius: 20,
+              padding: "2px 4px 2px 10px",
+              width: 210,
             }}
           >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c === "all" ? "All Categories" : c}
-              </option>
-            ))}
-          </select>
-          <div style={{ width: 1, height: 18, background: "var(--holocene-line)", marginRight: 8 }} />
-          <input
-            type="text"
-            placeholder="Search news titles or topics..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              border: "none",
-              background: "transparent",
-              outline: "none",
-              fontSize: "0.85rem",
-              width: "100%",
-            }}
-          />
-          <button
-            type="submit"
-            aria-label="Search"
-            style={{
-              border: "none",
-              background: "var(--holocene-green)",
-              color: "var(--holocene-cream)",
-              borderRadius: "50%",
-              width: 32,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--holocene-muted)"
+              strokeWidth="2.4"
+              aria-hidden="true"
+              style={{ flexShrink: 0, marginRight: 6 }}
+            >
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-          </button>
-        </form>
+            <label htmlFor="nav-search" className="visually-hidden">
+              Search
+            </label>
+            <input
+              id="nav-search"
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                border: "none",
+                background: "transparent",
+                outline: "none",
+                fontSize: "0.8rem",
+                width: "100%",
+                minWidth: 0,
+                color: "var(--holocene-ink)",
+              }}
+            />
+            <button
+              type="submit"
+              aria-label="Search"
+              style={{
+                border: "none",
+                background: "var(--holocene-green)",
+                color: "var(--holocene-cream)",
+                borderRadius: "50%",
+                width: 24,
+                height: 24,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </form>
 
-        {/* Desktop Links */}
-        <div className="d-none d-md-flex gap-4 align-items-center">
-          <NavLink
-            to="/"
-            end
-            style={({ isActive }) => ({
-              fontWeight: isActive ? 700 : 500,
-              color: isActive ? "var(--holocene-green)" : "var(--holocene-ink)",
-              textDecoration: "none",
-              fontSize: "0.95rem",
-            })}
-          >
-            Home
-          </NavLink>
-          <NavLink
-            to="/blogs"
-            style={({ isActive }) => ({
-              fontWeight: isActive ? 700 : 500,
-              color: isActive ? "var(--holocene-green)" : "var(--holocene-ink)",
-              textDecoration: "none",
-              fontSize: "0.95rem",
-            })}
-          >
-            Articles
-          </NavLink>
-          <NavLink
-            to="/about"
-            style={({ isActive }) => ({
-              fontWeight: isActive ? 700 : 500,
-              color: isActive ? "var(--holocene-green)" : "var(--holocene-ink)",
-              textDecoration: "none",
-              fontSize: "0.95rem",
-            })}
-          >
-            About
-          </NavLink>
-        </div>
-
-        {/* Desktop Auth Actions */}
-        <div className="d-none d-md-flex gap-2 align-items-center">
+          {/* Auth Actions */}
           {isAuth ? (
             <>
               <Link
@@ -211,9 +331,10 @@ export default function Navbar() {
                   color: "var(--holocene-green)",
                   border: "1px solid var(--holocene-green)",
                   fontWeight: 600,
+                  whiteSpace: "nowrap",
                 }}
               >
-                👤 {user.firstname}
+                👤 {user?.firstname || "Profile"}
               </Link>
               <Link
                 to="/my-articles"
@@ -223,6 +344,7 @@ export default function Navbar() {
                   color: "var(--holocene-green)",
                   border: "1px solid var(--holocene-green)",
                   fontWeight: 600,
+                  whiteSpace: "nowrap",
                 }}
               >
                 My Articles
@@ -236,12 +358,18 @@ export default function Navbar() {
                     color: "var(--holocene-green)",
                     fontWeight: 700,
                     border: "none",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  Admin Panel
+                  Admin
                 </Link>
               )}
-              <button className="btn btn-sm btn-outline-danger" onClick={handleLogout}>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={handleLogout}
+                style={{ whiteSpace: "nowrap" }}
+              >
                 Logout
               </button>
             </>
@@ -255,6 +383,7 @@ export default function Navbar() {
                   color: "var(--holocene-green)",
                   border: "1px solid var(--holocene-green)",
                   fontWeight: 600,
+                  whiteSpace: "nowrap",
                 }}
               >
                 Login
@@ -267,6 +396,7 @@ export default function Navbar() {
                   color: "var(--holocene-cream)",
                   border: "none",
                   fontWeight: 600,
+                  whiteSpace: "nowrap",
                 }}
               >
                 Sign Up
@@ -275,37 +405,75 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile toggle */}
+        {/* ---------- Mobile Toggle ---------- */}
         <button
-          className="btn d-md-none p-1"
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle Navigation"
-          style={{ border: "1px solid var(--holocene-line)" }}
+          type="button"
+          className="btn d-lg-none p-1"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Close navigation" : "Open navigation"}
+          aria-expanded={open}
+          aria-controls="mobile-nav"
+          style={{ border: "1px solid var(--holocene-line)", flexShrink: 0 }}
         >
-          <span style={{ fontSize: "1.4rem" }}>{open ? "✕" : "☰"}</span>
+          <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>
+            {open ? "✕" : "☰"}
+          </span>
         </button>
       </nav>
 
-      {/* Mobile Drawer */}
+      {/* ================= Mobile Drawer ================= */}
       {open && (
-        <div className="d-md-none container pb-3 pt-2 d-flex flex-column gap-3 border-top">
-          <form onSubmit={handleSearchSubmit} className="d-flex align-items-center gap-2">
+        <div
+          id="mobile-nav"
+          className="d-lg-none container pb-3 pt-2 d-flex flex-column gap-3 border-top"
+        >
+          <div className="d-flex flex-column gap-2">
+            <Link
+              to="/"
+              onClick={closeMobile}
+              style={{ textDecoration: "none", color: "var(--holocene-ink)" }}
+            >
+              Home
+            </Link>
+            <Link
+              to="/blogs"
+              onClick={closeMobile}
+              style={{ textDecoration: "none", color: "var(--holocene-ink)" }}
+            >
+              Articles &amp; News
+            </Link>
+            <Link
+              to="/about"
+              onClick={closeMobile}
+              style={{ textDecoration: "none", color: "var(--holocene-ink)" }}
+            >
+              About Us
+            </Link>
+          </div>
+
+          <form
+            onSubmit={handleSearchSubmit}
+            className="d-flex align-items-center gap-2"
+            role="search"
+          >
             <input
               type="text"
               className="form-control form-control-sm"
               placeholder="Search news..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search news"
             />
             <select
               className="form-select form-select-sm"
-              style={{ width: "auto" }}
+              style={{ width: "auto", maxWidth: 130 }}
               value={selectedCat}
               onChange={(e) => setSelectedCat(e.target.value)}
+              aria-label="Category"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {c === "all" ? "All" : c}
                 </option>
               ))}
             </select>
@@ -314,46 +482,50 @@ export default function Navbar() {
             </button>
           </form>
 
-          <div className="d-flex flex-column gap-2">
-            <Link to="/" onClick={() => setOpen(false)} style={{ textDecoration: "none", color: "var(--holocene-ink)" }}>
-              Home
-            </Link>
-            <Link to="/blogs" onClick={() => setOpen(false)} style={{ textDecoration: "none", color: "var(--holocene-ink)" }}>
-              Articles & News
-            </Link>
-            <Link to="/about" onClick={() => setOpen(false)} style={{ textDecoration: "none", color: "var(--holocene-ink)" }}>
-              About Us
-            </Link>
-          </div>
-
           <hr className="my-1" />
+
           {isAuth ? (
             <div className="d-flex flex-column gap-2">
-              <Link to="/profile" onClick={() => setOpen(false)}>
-                My Profile ({user.firstname})
+              <Link to="/profile" onClick={closeMobile}>
+                My Profile ({user?.firstname || "User"})
               </Link>
               <Link to="/my-articles" onClick={() => setOpen(false)}>
                 My Articles
               </Link>
               {canAdmin && (
-                <Link to="/admin" onClick={() => setOpen(false)} style={{ color: "var(--holocene-green)", fontWeight: 700 }}>
+                <Link
+                  to="/admin"
+                  onClick={closeMobile}
+                  style={{ color: "var(--holocene-green)", fontWeight: 700 }}
+                >
                   Admin Dashboard
                 </Link>
               )}
-              <button className="btn btn-outline-danger btn-sm mt-2" onClick={handleLogout}>
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm mt-2"
+                onClick={handleLogout}
+              >
                 Logout
               </button>
             </div>
           ) : (
             <div className="d-flex gap-2">
-              <Link to="/login" className="btn btn-outline-dark btn-sm flex-fill" onClick={() => setOpen(false)}>
+              <Link
+                to="/login"
+                className="btn btn-outline-dark btn-sm flex-fill"
+                onClick={closeMobile}
+              >
                 Login
               </Link>
               <Link
                 to="/register"
                 className="btn btn-sm flex-fill"
-                style={{ background: "var(--holocene-green)", color: "var(--holocene-cream)" }}
-                onClick={() => setOpen(false)}
+                style={{
+                  background: "var(--holocene-green)",
+                  color: "var(--holocene-cream)",
+                }}
+                onClick={closeMobile}
               >
                 Sign Up
               </Link>

@@ -60,7 +60,7 @@ export default function Login() {
             <Form>
               <div className="mb-3">
                 <label className="form-label">Email Address</label>
-                <Field type="email" name="email" className="form-control" placeholder="you@example.com" />
+                <Field type="email" name="email" className="form-control" placeholder="your email here" />
                 <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
               </div>
               <div className="mb-3">

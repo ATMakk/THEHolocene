@@ -1,0 +1,23 @@
+{
+  "$schema": "https://vercel.sh",
+  "services": {
+    "my_frontend": {
+      "root": "REACT/",
+      "framework": "vite"
+    },
+    "my_backend": {
+      "root": "Node/",
+      "framework": "express"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": { "service": "my_backend" }
+    },
+    {
+      "source": "/(.*)",
+      "destination": { "service": "my_frontend" }
+    }
+  ]
+}

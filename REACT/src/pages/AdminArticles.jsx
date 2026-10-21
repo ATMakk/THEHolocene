@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getAllBlogs, adminDeleteBlog, featureBlog, approveBlog, cleanupOldBlogsAPI } from "../API/index.js";
+import { getAllBlogs, adminDeleteBlog, featureBlog, cleanupOldBlogsAPI } from "../API/index.js";
 
 const statusStyles = {
   draft: { bg: "#e9ecef", color: "#495057", label: "Draft" },
@@ -9,58 +9,80 @@ const statusStyles = {
   rejected: { bg: "#f8d7da", color: "#842029", label: "Rejected" },
 };
 
+const articleQueryParams = (status, search) => {
+  const params = { limit: 100 };
+  if (status === "featured") params.featured = true;
+  else if (status) params.status = status;
+  if (search.trim()) params.search = search.trim();
+  return params;
+};
+
 export default function AdminArticles() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialStatus = searchParams.get("status") || "";
-  const initialSearch = searchParams.get("search") || "";
+  const status =
+    searchParams.get("featured") === "true"
+      ? "featured"
+      : searchParams.get("status") || "";
 
   const [blogs, setBlogs] = useState([]);
-  const [status, setStatus] = useState(initialStatus);
-  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [cleaning, setCleaning] = useState(false);
 
-  const load = async (s = status, q = searchTerm) => {
+  const load = async (
+    s = status,
+    q = searchParams.get("search") || ""
+  ) => {
     try {
       setLoading(true);
-      const params = { limit: 100 };
-      if (s) params.status = s;
-      if (q) params.search = q;
-      const res = await getAllBlogs(params);
+      setError("");
+      const res = await getAllBlogs(articleQueryParams(s, q));
       setBlogs(res.data?.data || []);
+    } catch (err) {
+      setError(err.message || "Failed to load articles");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load(searchParams.get("status") || "", searchParams.get("search") || "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    const currentStatus =
+      searchParams.get("featured") === "true"
+        ? "featured"
+        : searchParams.get("status") || "";
+
+    getAllBlogs(
+      articleQueryParams(currentStatus, searchParams.get("search") || "")
+    )
+      .then((response) => {
+        if (!cancelled) {
+          setBlogs(response.data?.data || []);
+          setError("");
+        }
+      })
+      .catch((requestError) => {
+        if (!cancelled) {
+          setError(requestError.message || "Failed to load articles");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
+  const updateFilters = (nextStatus, searchTerm) => {
+    setLoading(true);
+    setError("");
     const params = new URLSearchParams();
-    if (status) params.set("status", status);
+    if (nextStatus === "featured") params.set("featured", "true");
+    else if (nextStatus) params.set("status", nextStatus);
     if (searchTerm.trim()) params.set("search", searchTerm.trim());
     setSearchParams(params);
-  };
-
-  const handleStatusChange = (nextStatus) => {
-    setStatus(nextStatus);
-    const params = new URLSearchParams();
-    if (nextStatus) params.set("status", nextStatus);
-    if (searchTerm.trim()) params.set("search", searchTerm.trim());
-    setSearchParams(params);
-  };
-
-  const handleApprove = async (blog) => {
-    try {
-      await approveBlog(blog._id);
-      await load();
-    } catch (err) {
-      alert(err.message || "Cannot approve article");
-    }
   };
 
   const handleFeature = async (blog) => {
@@ -102,7 +124,7 @@ export default function AdminArticles() {
         <div className="d-flex align-items-center gap-2 flex-wrap">
           <h4 style={{ margin: 0 }}>All Articles</h4>
           <Link
-            to="/my-articles/new"
+            to="/admin/articles/new"
             className="btn btn-sm"
             style={{ background: "var(--holocene-green)", color: "var(--holocene-cream)", fontWeight: 600 }}
           >
@@ -119,35 +141,25 @@ export default function AdminArticles() {
           </button>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="d-flex gap-2 align-items-center flex-wrap">
-          <input
-            type="text"
-            className="form-control form-control-sm"
-            placeholder="Search by title, category..."
-            style={{ width: 220 }}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <select
-            className="form-select form-select-sm"
-            style={{ width: 150 }}
-            value={status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-          >
-            <option value="">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="featured">Featured</option>
-          </select>
-          <button type="submit" className="btn btn-sm btn-dark">
-            Search
-          </button>
-        </form>
+        <ArticleFilters
+          key={searchParams.toString()}
+          status={status}
+          initialSearch={searchParams.get("search") || ""}
+          onSubmit={(searchTerm) => updateFilters(status, searchTerm)}
+          onStatusChange={(nextStatus, searchTerm) =>
+            updateFilters(nextStatus, searchTerm)
+          }
+        />
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="alert alert-danger" role="alert">
+          {error}{" "}
+          <button className="btn btn-sm btn-outline-danger ms-2" onClick={() => load()}>
+            Retry
+          </button>
+        </div>
+      ) : loading ? (
         <p>Loading Articles…</p>
       ) : (
         <div
@@ -183,9 +195,13 @@ export default function AdminArticles() {
                   return (
                     <tr key={b._id}>
                       <td style={{ maxWidth: 260 }}>
-                        <Link to={`/blogs/${b._id}`} style={{ fontWeight: 600, color: "var(--holocene-green)" }}>
-                          {b.title}
-                        </Link>
+                        {b.status === "approved" ? (
+                          <Link to={`/blogs/${b._id}`} style={{ fontWeight: 600, color: "var(--holocene-green)" }}>
+                            {b.title}
+                          </Link>
+                        ) : (
+                          b.title
+                        )}
                       </td>
                       <td>
                         {b.author?.firstname} {b.author?.lastname}
@@ -211,16 +227,11 @@ export default function AdminArticles() {
                       <td>
                         <div className="d-flex gap-1 flex-wrap">
                           <Link
-                            to={`/my-articles/edit/${b._id}`}
+                            to={`/admin/articles/${b._id}/edit`}
                             className="btn btn-sm btn-outline-primary"
                           >
                             Edit
                           </Link>
-                          {b.status === "pending" && (
-                            <button className="btn btn-sm btn-success" onClick={() => handleApprove(b)}>
-                              Approve
-                            </button>
-                          )}
                           <button
                             className="btn btn-sm btn-outline-secondary"
                             onClick={() => handleFeature(b)}
@@ -244,5 +255,45 @@ export default function AdminArticles() {
         </div>
       )}
     </>
+  );
+}
+
+function ArticleFilters({ status, initialSearch, onSubmit, onStatusChange }) {
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onSubmit(searchTerm);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="d-flex gap-2 align-items-center flex-wrap">
+      <input
+        type="text"
+        className="form-control form-control-sm"
+        placeholder="Search by title, category..."
+        style={{ width: 220 }}
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        aria-label="Search articles"
+      />
+      <select
+        className="form-select form-select-sm"
+        style={{ width: 150 }}
+        value={status}
+        onChange={(e) => onStatusChange(e.target.value, searchTerm)}
+        aria-label="Filter articles by status"
+      >
+        <option value="">All Statuses</option>
+        <option value="draft">Draft</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="featured">Featured</option>
+      </select>
+      <button type="submit" className="btn btn-sm btn-dark">
+        Search
+      </button>
+    </form>
   );
 }

@@ -1,8 +1,11 @@
 const express = require("express");
 const {
   registerUser,
+  verifyRegistrationOtp,
   loginUser,
   socialLoginUser,
+  startGithubLogin,
+  githubLoginCallback,
   getUser,
   getUserByOperator,
   updateUser,
@@ -18,8 +21,11 @@ const router = express.Router();
 
 // Public
 router.post("/register", registerUser);
+router.post("/register/verify-otp", verifyRegistrationOtp);
 router.post("/login", loginUser);
 router.post("/social-login", socialLoginUser);
+router.get("/oauth/github", startGithubLogin);
+router.get("/oauth/github/callback", githubLoginCallback);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 

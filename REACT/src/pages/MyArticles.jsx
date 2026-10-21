@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getMyBlogs, deleteBlog } from "../api/index.js";
+import { getMyBlogs, deleteBlog } from "../API/index.js";
 
 const statusStyles = {
   draft: { bg: "#e9ecef", color: "#495057", label: "Draft" },

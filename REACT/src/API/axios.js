@@ -5,13 +5,16 @@ const api = axios.create({
   // baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1",
   baseURL: import.meta.env.VITE_API_URL || "/api/v1",
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 // Attach token from cookie to every request
 api.interceptors.request.use(
   (config) => {
     const token = cookies.get("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -28,6 +31,8 @@ api.interceptors.response.use(
     const isAuthEndpoint =
       url.includes("/users/login") ||
       url.includes("/users/register") ||
+      url.includes("/users/social-login") ||
+      url.includes("/users/register/verify-otp") ||
       url.includes("/admins/login") ||
       url.includes("/admins/register") ||
       url.includes("/users/forgot-password") ||

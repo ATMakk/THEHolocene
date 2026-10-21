@@ -16,6 +16,7 @@ import Register from "./pages/Register.jsx";
 import AdminLogin from "./pages/AdminLogin.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
+import AuthCallback from "./pages/AuthCallback.jsx";
 
 // User
 import Profile from "./pages/Profile.jsx";
@@ -26,6 +27,7 @@ import ArticleForm from "./pages/ArticleForm.jsx";
 import AdminHome from "./pages/AdminHome.jsx";
 import AdminArticles from "./pages/AdminArticles.jsx";
 import AdminApprovals from "./pages/AdminApprovals.jsx";
+import AdminReports from "./pages/AdminReports.jsx";
 import AdminUsers from "./pages/AdminUsers.jsx";
 import AdminProfile from "./pages/AdminProfile.jsx";
 import AdminComments from "./pages/AdminComments.jsx";
@@ -54,6 +56,7 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/admin/login" element={<AdminLogin />} />
 
       {/* Protected (any authenticated user) */}
@@ -69,7 +72,13 @@ export default function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
           <Route path="articles" element={<AdminArticles />} />
+          <Route path="articles/new" element={<ArticleForm adminMode />} />
+          <Route
+            path="articles/:id/edit"
+            element={<ArticleForm edit adminMode />}
+          />
           <Route path="approvals" element={<AdminApprovals />} />
+          <Route path="reports" element={<AdminReports />} />
           <Route path="comments" element={<AdminComments />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="profile" element={<AdminProfile />} />

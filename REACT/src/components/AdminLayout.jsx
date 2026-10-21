@@ -5,6 +5,7 @@ const links = [
   { to: "/admin", label: "Dashboard", end: true },
   { to: "/admin/articles", label: "Articles" },
   { to: "/admin/approvals", label: "Approvals" },
+  { to: "/admin/reports", label: "Reports" },
   { to: "/admin/comments", label: "Comments" },
   { to: "/admin/users", label: "Users" },
   { to: "/admin/profile", label: "My Profile" },

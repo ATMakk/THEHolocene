@@ -1,17 +1,29 @@
+import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import SocialAuthButtons from "../components/SocialAuthButtons.jsx";
 import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 
+// Local part as before; domain must end in a letters-only TLD of 2+ characters (rejects "a@b.1", "a@b")
+const EMAIL_PATTERN =
+  /^[A-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)*\.[A-Z]{2,}$/i;
+
 const schema = Yup.object({
-  email: Yup.string().email("Enter a valid email").required("Email is required"),
-  password: Yup.string().required("Password is required"),
+  email: Yup.string()
+    .trim()
+    .max(254, "Email is too long")
+    .matches(EMAIL_PATTERN, "Enter a valid email address")
+    .required("Email is required"),
+  type: Yup.string().oneOf(["email", "google", "github"]).required(),
+  // Login only checks presence: applying the new signup rules here would lock out existing users
+  password: Yup.string().max(72, "Password is too long").required("Password is required"),
 });
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="container my-5" style={{ maxWidth: 420 }}>
@@ -43,11 +55,12 @@ export default function Login() {
         </p>
 
         <Formik
-          initialValues={{ email: "", password: "" }}
+          initialValues={{ email: "", password: "", type: "email" }}
           validationSchema={schema}
           onSubmit={async (values, { setSubmitting, setStatus }) => {
+            setStatus("");
             try {
-              await login(values.email, values.password);
+              await login(values.email.trim().toLowerCase(), values.password);
               navigate("/");
             } catch (err) {
               setStatus(err.message || "Invalid credentials");
@@ -57,24 +70,44 @@ export default function Login() {
           }}
         >
           {({ isSubmitting, status }) => (
-            <Form>
+            <Form noValidate>
               <div className="mb-3">
-                <label className="form-label">Email Address</label>
-                <Field type="email" name="email" className="form-control" placeholder="your email here" />
+                <label htmlFor="login-email" className="form-label">Email Address</label>
+                <Field id="login-email" type="email" name="email" className="form-control" placeholder="your email here" autoComplete="email" maxLength={254} />
                 <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
               </div>
               <div className="mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
-                  <label className="form-label mb-0">Password</label>
+                  <label htmlFor="login-password" className="form-label mb-0">Password</label>
                   <Link to="/forgot-password" style={{ fontSize: "0.82rem", color: "var(--holocene-green)", fontWeight: 600 }}>
                     Forgot Password?
                   </Link>
                 </div>
-                <Field type="password" name="password" className="form-control" placeholder="Your password" />
+                <div className="input-group">
+                  <Field
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    className="form-control"
+                    placeholder="Your password"
+                    autoComplete="current-password"
+                    maxLength={72}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
+                  </button>
+                </div>
                 <ErrorMessage name="password" component="div" className="text-danger small mt-1" />
               </div>
 
-              {status && <div className="alert alert-danger py-2">{status}</div>}
+              {status && <div className="alert alert-danger py-2" role="alert">{status}</div>}
 
               <button
                 type="submit"

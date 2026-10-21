@@ -453,13 +453,26 @@ const getMyBookmarks = async (req, res) => {
 /* ADMIN-FACING */
 
 const adminGetAllBlogs = async (req, res) => {
-  const { page = 1, limit = 20, status, category, author } = req.query;
+  const { page = 1, limit = 20, status, category, author, featured, search } =
+    req.query;
 
   try {
     const filter = {};
     if (status) filter.status = status;
     if (category) filter.category = category;
     if (author) filter.author = author;
+    if (featured === "true") filter.isFeatured = true;
+    if (search?.trim()) {
+      const escapedSearch = search
+        .trim()
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { title: { $regex: escapedSearch, $options: "i" } },
+        { snippet: { $regex: escapedSearch, $options: "i" } },
+        { category: { $regex: escapedSearch, $options: "i" } },
+        { tags: { $regex: escapedSearch, $options: "i" } },
+      ];
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
     const blogs = await BlogModel.find(filter)
@@ -483,6 +496,129 @@ const adminGetAllBlogs = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).send({ message: "Cannot fetch blogs" });
+  }
+};
+
+const adminGetBlog = async (req, res) => {
+  try {
+    const blog = await BlogModel.findById(req.params.blogId).populate(
+      "author",
+      "firstname lastname email tag"
+    );
+    if (!blog) return res.status(404).send({ message: "Blog not found" });
+
+    res.status(200).send({ message: "Blog fetched successfully", data: blog });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Cannot fetch blog" });
+  }
+};
+
+const adminCreateBlog = async (req, res) => {
+  const { id: adminId } = req.admin;
+  const { title, content, snippet, category, tags, coverImage } = req.body;
+
+  try {
+    if (!title || !content) {
+      return res.status(400).send({ message: "Title and content are required" });
+    }
+    if (!CATEGORIES.includes(category)) {
+      return res.status(400).send({
+        message: `Category must be one of: ${CATEGORIES.join(", ")}`,
+      });
+    }
+
+    let cover = {};
+    if (coverImage) {
+      const uploaded = await cloudinary.uploader.upload(coverImage, {
+        folder: "blog_covers",
+      });
+      cover = {
+        secure_url: uploaded.secure_url,
+        public_id: uploaded.public_id,
+      };
+    }
+
+    const blog = await BlogModel.create({
+      title,
+      content,
+      snippet: snippet || content.substring(0, 200),
+      coverImage: cover,
+      category,
+      tags: Array.isArray(tags) ? tags : [],
+      author: adminId,
+      authorModel: "admin",
+      source: "user",
+      status: "pending",
+    });
+
+    res.status(201).send({
+      message: "Admin article created and submitted for approval",
+      data: blog,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Cannot create blog at this time" });
+  }
+};
+
+const adminUpdateBlog = async (req, res) => {
+  const { blogId } = req.params;
+  const { title, content, snippet, category, tags, coverImage } = req.body;
+
+  try {
+    const blog = await BlogModel.findById(blogId);
+    if (!blog) return res.status(404).send({ message: "Blog not found" });
+
+    if (title !== undefined) {
+      if (!title.trim()) {
+        return res.status(400).send({ message: "Title is required" });
+      }
+      blog.title = title;
+    }
+    if (content !== undefined) {
+      if (!content.trim()) {
+        return res.status(400).send({ message: "Content is required" });
+      }
+      blog.content = content;
+    }
+    if (snippet !== undefined) blog.snippet = snippet;
+    if (category !== undefined) {
+      if (!CATEGORIES.includes(category)) {
+        return res.status(400).send({
+          message: `Category must be one of: ${CATEGORIES.join(", ")}`,
+        });
+      }
+      blog.category = category;
+    }
+    if (tags !== undefined) {
+      if (!Array.isArray(tags)) {
+        return res.status(400).send({ message: "Tags must be an array" });
+      }
+      blog.tags = tags;
+    }
+
+    if (coverImage) {
+      const uploaded = await cloudinary.uploader.upload(coverImage, {
+        folder: "blog_covers",
+      });
+      if (blog.coverImage?.public_id) {
+        await cloudinary.uploader.destroy(blog.coverImage.public_id);
+      }
+      blog.coverImage = {
+        secure_url: uploaded.secure_url,
+        public_id: uploaded.public_id,
+      };
+    }
+
+    await blog.save();
+    res.status(200).send({
+      message: "Blog updated; approval status preserved",
+      data: blog,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Cannot update blog" });
   }
 };
 
@@ -657,6 +793,9 @@ module.exports = {
   getMyBookmarks,
   // admin
   adminGetAllBlogs,
+  adminGetBlog,
+  adminCreateBlog,
+  adminUpdateBlog,
   approveBlog,
   rejectBlog,
   featureBlog,

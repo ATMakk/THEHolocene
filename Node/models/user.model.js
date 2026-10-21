@@ -5,6 +5,7 @@ const UserSchema = new mongoose.Schema(
     firstname: { type: String, required: true },
     lastname: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
+    emailVerified: { type: Boolean, default: true },
     tag: { type: String, sparse: true, unique: true },
     password: { type: String, required: false, select: false },
     provider: {
@@ -12,8 +13,8 @@ const UserSchema = new mongoose.Schema(
       default: "local",
       enum: ["local", "google", "github"],
     },
-    googleId: { type: String, sparse: true },
-    githubId: { type: String, sparse: true },
+    googleId: { type: String, sparse: true, unique: true, select: false },
+    githubId: { type: String, sparse: true, unique: true, select: false },
     role: {
       type: String,
       default: "user",

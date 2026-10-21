@@ -2,14 +2,27 @@ import api from "./axios.js";
 
 /* ---------------- AUTH / USERS ---------------- */
 export const registerUser = (data) => api.post("/users/register", data);
+export const verifyRegistrationOtp = (data) =>
+  api.post("/users/register/verify-otp", data);
 export const loginUser = (data) => api.post("/users/login", data);
 export const socialLogin = (data) => api.post("/users/social-login", data);
+export const getGithubLoginUrl = () => {
+  const apiBase = import.meta.env.VITE_API_URL || "/api/v1";
+  return new URL(
+    `${apiBase.replace(/\/$/, "")}/users/oauth/github`,
+    window.location.origin
+  ).href;
+};
 export const loginAdmin = (data) => api.post("/admins/login", data);
 export const forgotPassword = (data) => api.post("/users/forgot-password", data);
 export const resetPassword = (token, data) =>
   api.post(`/users/reset-password/${token}`, data);
 
-export const getMe = () => api.get("/users/me");
+export const getMe = (token) =>
+  api.get(
+    "/users/me",
+    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+  );
 export const updateMe = (id, data) => api.patch(`/users/${id}`, data);
 export const updateProfilePicture = (data) => api.patch("/users/me/picture", data);
 export const changePassword = (data) => api.patch("/users/me/password", data);
@@ -55,6 +68,9 @@ export const createOperator = (data) => api.post("/admins/operators", data);
 
 /* ---------------- ADMIN BLOG MODERATION ---------------- */
 export const getAllBlogs = (params) => api.get("/admin/blogs", { params });
+export const getAdminBlog = (id) => api.get(`/admin/blogs/${id}`);
+export const createAdminBlog = (data) => api.post("/admin/blogs", data);
+export const updateAdminBlog = (id, data) => api.patch(`/admin/blogs/${id}`, data);
 export const approveBlog = (id) => api.patch(`/admin/blogs/${id}/approve`);
 export const rejectBlog = (id, data) =>
   api.patch(`/admin/blogs/${id}/reject`, data);

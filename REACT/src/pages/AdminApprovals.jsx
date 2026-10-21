@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { getAllBlogs, approveBlog, rejectBlog } from "../api/index.js";
+import { getAllBlogs, approveBlog, rejectBlog } from "../API/index.js";
 
 const rejectSchema = Yup.object({
   reason: Yup.string().trim().min(3, "Give a reason").required("Reason is required"),

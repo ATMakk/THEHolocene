@@ -86,7 +86,6 @@ function NewsTicker({ items }) {
         className="d-none d-md-inline"
         dateTime={timestamp.toISOString()}
         style={{
-          
           flexShrink: 0,
           padding: "0.4rem 1rem",
           opacity: 0.9,
@@ -106,15 +105,139 @@ function NewsTicker({ items }) {
   );
 }
 
+function SearchControls({
+  initialSearch,
+  initialCategory,
+  onSearch,
+  compact = false,
+}) {
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [selectedCat, setSelectedCat] = useState(initialCategory);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onSearch(searchTerm, selectedCat);
+  };
+
+  if (compact) {
+    return (
+      <form
+        onSubmit={handleSubmit}
+        className="d-flex align-items-center"
+        role="search"
+        style={{
+          background: "#f8f9fa",
+          border: "1px solid var(--holocene-line)",
+          borderRadius: 20,
+          padding: "2px 4px 2px 10px",
+          width: 210,
+        }}
+      >
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--holocene-muted)"
+          strokeWidth="2.4"
+          aria-hidden="true"
+          style={{ flexShrink: 0, marginRight: 6 }}
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <label htmlFor="nav-search" className="visually-hidden">
+          Search
+        </label>
+        <input
+          id="nav-search"
+          type="text"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            border: "none",
+            background: "transparent",
+            outline: "none",
+            fontSize: "0.8rem",
+            width: "100%",
+            minWidth: 0,
+            color: "var(--holocene-ink)",
+          }}
+        />
+        <button
+          type="submit"
+          aria-label="Search"
+          style={{
+            border: "none",
+            background: "var(--holocene-green)",
+            color: "var(--holocene-cream)",
+            borderRadius: "50%",
+            width: 24,
+            height: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+        >
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+      </form>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="d-flex align-items-center gap-2"
+      role="search"
+    >
+      <input
+        type="text"
+        className="form-control form-control-sm"
+        placeholder="Search news..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        aria-label="Search news"
+      />
+      <select
+        className="form-select form-select-sm"
+        style={{ width: "auto", maxWidth: 130 }}
+        value={selectedCat}
+        onChange={(e) => setSelectedCat(e.target.value)}
+        aria-label="Category"
+      >
+        {CATEGORIES.map((c) => (
+          <option key={c} value={c}>
+            {c === "all" ? "All" : c}
+          </option>
+        ))}
+      </select>
+      <button type="submit" className="btn btn-sm btn-dark">
+        Search
+      </button>
+    </form>
+  );
+}
+
 export default function Navbar() {
   const { user, isAuth, canAdmin, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [trending, setTrending] = useState([]);
   const [searchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
-  const [selectedCat, setSelectedCat] = useState(
-    searchParams.get("category") || "all"
-  );
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -133,11 +256,8 @@ export default function Navbar() {
     };
   }, []);
 
-  // Keep local state in sync with URL changes (back/forward, deep links)
-  useEffect(() => {
-    setSearchTerm(searchParams.get("search") || "");
-    setSelectedCat(searchParams.get("category") || "all");
-  }, [searchParams]);
+  const activeSearch = searchParams.get("search") || "";
+  const activeCategory = searchParams.get("category") || "all";
 
   const handleLogout = () => {
     logout();
@@ -145,8 +265,7 @@ export default function Navbar() {
     navigate("/");
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
+  const handleSearchSubmit = (searchTerm, selectedCat) => {
     const params = new URLSearchParams();
     if (searchTerm.trim()) params.set("search", searchTerm.trim());
     if (selectedCat && selectedCat !== "all") params.set("category", selectedCat);
@@ -244,81 +363,13 @@ export default function Navbar() {
           style={{ flexShrink: 0 }}
         >
           {/* Compact search — far right */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="d-flex align-items-center"
-            role="search"
-            style={{
-              background: "#f8f9fa",
-              border: "1px solid var(--holocene-line)",
-              borderRadius: 20,
-              padding: "2px 4px 2px 10px",
-              width: 210,
-            }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--holocene-muted)"
-              strokeWidth="2.4"
-              aria-hidden="true"
-              style={{ flexShrink: 0, marginRight: 6 }}
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <label htmlFor="nav-search" className="visually-hidden">
-              Search
-            </label>
-            <input
-              id="nav-search"
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                border: "none",
-                background: "transparent",
-                outline: "none",
-                fontSize: "0.8rem",
-                width: "100%",
-                minWidth: 0,
-                color: "var(--holocene-ink)",
-              }}
-            />
-            <button
-              type="submit"
-              aria-label="Search"
-              style={{
-                border: "none",
-                background: "var(--holocene-green)",
-                color: "var(--holocene-cream)",
-                borderRadius: "50%",
-                width: 24,
-                height: 24,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-            >
-              <svg
-                width="11"
-                height="11"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.6"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </button>
-          </form>
+          <SearchControls
+            key={`${activeSearch}|${activeCategory}`}
+            initialSearch={activeSearch}
+            initialCategory={activeCategory}
+            onSearch={handleSearchSubmit}
+            compact
+          />
 
           {/* Auth Actions */}
           {isAuth ? (
@@ -451,36 +502,12 @@ export default function Navbar() {
             </Link>
           </div>
 
-          <form
-            onSubmit={handleSearchSubmit}
-            className="d-flex align-items-center gap-2"
-            role="search"
-          >
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Search news..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="Search news"
-            />
-            <select
-              className="form-select form-select-sm"
-              style={{ width: "auto", maxWidth: 130 }}
-              value={selectedCat}
-              onChange={(e) => setSelectedCat(e.target.value)}
-              aria-label="Category"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c === "all" ? "All" : c}
-                </option>
-              ))}
-            </select>
-            <button type="submit" className="btn btn-sm btn-dark">
-              Search
-            </button>
-          </form>
+          <SearchControls
+            key={`${activeSearch}|${activeCategory}`}
+            initialSearch={activeSearch}
+            initialCategory={activeCategory}
+            onSearch={handleSearchSubmit}
+          />
 
           <hr className="my-1" />
 

@@ -1,8 +1,10 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useEffect, useState } from "react";
 import {
   loginUser,
   loginAdmin,
   registerUser,
+  verifyRegistrationOtp,
   socialLogin,
   getMe,
   getAdminMe,
@@ -19,8 +21,7 @@ const USER_KEY = "user";
 const COOKIE_OPTIONS = {
   path: "/",
   sameSite: "lax",
-  // expires: new Date(Date.now() + 2 * 60 * 60 * 1000), // uncomment to match backend 2h JWT
-  // secure: true, // enable in production (requires HTTPS)
+  secure: window.location.protocol === "https:",
 };
 
 export function AuthProvider({ children }) {
@@ -35,8 +36,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const save = (token, u) => {
-    cookies.set(TOKEN_KEY, token, COOKIE_OPTIONS);
-    cookies.set(USER_KEY, u, COOKIE_OPTIONS);
+    if (!token || !u) {
+      throw new Error("Authentication did not return a valid session");
+    }
+    const options = {
+      ...COOKIE_OPTIONS,
+      expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    };
+    cookies.set(TOKEN_KEY, token, options);
+    cookies.set(USER_KEY, u, options);
     setUser(u);
   };
 
@@ -83,7 +91,11 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (payload) => {
-    const res = await registerUser(payload);
+    return registerUser(payload);
+  };
+
+  const verifySignupOtp = async (email, otp, photo) => {
+    const res = await verifyRegistrationOtp({ email, otp, ...(photo && { photo }) });
     const { token, ...u } = res.data?.data || {};
     save(token, u);
     return u;
@@ -96,6 +108,19 @@ export function AuthProvider({ children }) {
     return u;
   };
 
+  const completeSocialLogin = async (token) => {
+    if (!token || typeof token !== "string") {
+      throw new Error("Social sign-in did not return a valid session");
+    }
+    const response = await getMe(token);
+    const userData = response.data?.data;
+    if (!userData?._id) {
+      throw new Error("Could not load your account after social sign-in");
+    }
+    save(token, userData);
+    return userData;
+  };
+
   const logout = () => clear();
 
   return (
@@ -106,7 +131,9 @@ export function AuthProvider({ children }) {
         login,
         loginAsAdmin,
         register,
+        verifySignupOtp,
         loginWithSocial,
+        completeSocialLogin,
         logout,
         setUser,
         isAuth: !!user,

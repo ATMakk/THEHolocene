@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -7,10 +8,10 @@ import {
   deleteComment,
   toggleLike,
   toggleBookmark,
-} from "../api/index.js";
+} from "../API/index.js";
 import { useAuth } from "../hooks/useAuth.js";
 import BlogCard from "../components/BlogCard.jsx";
-import { getRelatedBlogs } from "../api/index.js";
+import { getRelatedBlogs } from "../API/index.js";
 
 export default function BlogDetail() {
   const { id } = useParams();

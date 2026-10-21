@@ -38,8 +38,8 @@ export default function AdminHome() {
     { label: "Total Users", value: stats?.totalUsers, icon: "👤", link: "/admin/users" },
     { label: "Comments", value: stats?.totalComments, icon: "💬", link: "/admin/comments" },
     { label: "Rejected", value: stats?.rejectedBlogs, icon: "✕", link: "/admin/articles?status=rejected" },
-    { label: "Featured", value: stats?.featuredBlogs, icon: "★", link: "/admin/articles?status=featured" },
-    { label: "Reported", value: stats?.reportedBlogs, icon: "⚠", link: "/admin/articles?status=reported" },
+    { label: "Featured", value: stats?.featuredBlogs, icon: "★", link: "/admin/articles?featured=true" },
+    { label: "Reported Articles", value: stats?.reportedBlogs, icon: "⚠", link: "/admin/reports" },
   ];
 
   return (
@@ -145,7 +145,7 @@ export default function AdminHome() {
                 return (
                   <tr key={b._id}>
                     <td style={{ maxWidth: 340 }}>
-                      <Link to={`/blogs/${b._id}`}>{b.title}</Link>
+                      <Link to={`/admin/articles/${b._id}/edit`}>{b.title}</Link>
                     </td>
                     <td>
                       {b.author?.firstname} {b.author?.lastname}

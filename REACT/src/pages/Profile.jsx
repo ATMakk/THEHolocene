@@ -13,7 +13,12 @@ const profileSchema = Yup.object({
 
 const passwordSchema = Yup.object({
   oldPassword: Yup.string().required("Current password is required"),
-  newPassword: Yup.string().min(6, "At least 6 characters").required("New password is required"),
+  newPassword: Yup.string()
+    .matches(
+      /^(?=.*[A-Za-z])(?=.*\d)[^\s]{10,72}$/,
+      "Use 10–72 characters with at least one letter and one number; no spaces"
+    )
+    .required("New password is required"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("newPassword")], "Passwords must match")
     .required("Please confirm your password"),

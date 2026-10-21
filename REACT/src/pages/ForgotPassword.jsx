@@ -7,21 +7,16 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [resetUrl, setResetUrl] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
     setError("");
-    setResetUrl("");
 
     try {
       const res = await forgotPassword({ email });
       setMessage(res.data?.message || "Password reset request sent!");
-      if (res.data?.resetUrl) {
-        setResetUrl(res.data.resetUrl);
-      }
     } catch (err) {
       setError(err.message || "Failed to process request");
     } finally {
@@ -61,13 +56,6 @@ export default function ForgotPassword() {
 
         {error && <div className="alert alert-danger py-2">{error}</div>}
         {message && <div className="alert alert-success py-2">{message}</div>}
-
-        {resetUrl && (
-          <div className="alert alert-info py-2 text-break">
-            <strong>Development Reset Link:</strong><br />
-            <a href={resetUrl}>{resetUrl}</a>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">

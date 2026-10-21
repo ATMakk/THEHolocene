@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useNavigate, useParams } from "react-router-dom";
-import { createBlog, updateBlog, getMyBlogs } from "../api/index.js";
+import {
+  createBlog,
+  updateBlog,
+  getMyBlogs,
+  getAdminBlog,
+  createAdminBlog,
+  updateAdminBlog,
+} from "../API/index.js";
 import { fileToBase64 } from "../utils/fileToBase64.js";
 
 const CATEGORIES = [
@@ -26,38 +33,75 @@ const schema = Yup.object({
   tags: Yup.string().optional(),
 });
 
-export default function ArticleForm({ edit = false }) {
+const EMPTY_ARTICLE = {
+  title: "",
+  snippet: "",
+  content: "",
+  category: "headlines",
+  tags: "",
+};
+
+export default function ArticleForm({ edit = false, adminMode = false }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [initial, setInitial] = useState(null);
+  const [initial, setInitial] = useState(() => (edit ? null : EMPTY_ARTICLE));
   const [cover, setCover] = useState(null);
+  const [loadError, setLoadError] = useState("");
+  const articlesPath = adminMode ? "/admin/articles" : "/my-articles";
 
   useEffect(() => {
-    if (!edit) {
-      setInitial({
-        title: "",
-        snippet: "",
-        content: "",
-        category: "headlines",
-        tags: "",
-      });
-      return;
-    }
-    (async () => {
-      const res = await getMyBlogs();
-      const found = (res.data?.data || []).find((b) => b._id === id);
-      if (found) {
-        setInitial({
-          title: found.title || "",
-          snippet: found.snippet || "",
-          content: found.content || "",
-          category: found.category || "headlines",
-          tags: (found.tags || []).join(", "),
-        });
-      }
-    })();
-  }, [edit, id]);
+    if (!edit) return;
+    let cancelled = false;
 
+    const loadArticle = async () => {
+      try {
+        const response = adminMode
+          ? await getAdminBlog(id)
+          : await getMyBlogs();
+        const found = adminMode
+          ? response.data?.data
+          : (response.data?.data || []).find((blog) => blog._id === id);
+
+        if (!found) throw new Error("Article not found");
+        if (!cancelled) {
+          setLoadError("");
+          setInitial({
+            title: found.title || "",
+            snippet: found.snippet || "",
+            content: found.content || "",
+            category: found.category || "headlines",
+            tags: (found.tags || []).join(", "),
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(error.message || "Could not load article");
+        }
+      }
+    };
+
+    loadArticle();
+    return () => {
+      cancelled = true;
+    };
+  }, [edit, adminMode, id]);
+
+  if (loadError) {
+    return (
+      <div className="container my-5">
+        <div className="alert alert-danger" role="alert">
+          {loadError}
+        </div>
+        <button
+          type="button"
+          className="btn btn-outline-dark"
+          onClick={() => navigate(articlesPath)}
+        >
+          Back to Articles
+        </button>
+      </div>
+    );
+  }
   if (!initial) return <div className="container my-5">Loading…</div>;
 
   const buildPayload = (values, saveAsDraft = false) => {
@@ -74,7 +118,13 @@ export default function ArticleForm({ edit = false }) {
     if (saveAsDraft) payload.saveAsDraft = true;
     return payload;
   };
-
+  const formTitle = adminMode
+    ? edit
+      ? "Edit Article"
+      : "Create Article"
+    : edit
+      ? "Edit Article"
+      : "Create New Article";
   return (
     <div className="container my-5" style={{ maxWidth: 820 }}>
       <div
@@ -82,12 +132,16 @@ export default function ArticleForm({ edit = false }) {
         style={{ borderBottom: "2px solid var(--holocene-green)", paddingBottom: "0.65rem" }}
       >
         <h2 style={{ fontFamily: "var(--font-serif)", margin: 0 }}>
-          {edit ? "Edit Article" : "Create New Article"}
+          {formTitle}
         </h2>
       </div>
 
       <div className="alert alert-info" style={{ fontSize: "0.9rem" }}>
-        Your article will be reviewed by an editor before it's published.
+        {adminMode
+          ? edit
+            ? "Saving changes preserves the article's current approval status."
+            : "New articles created here are submitted as pending approval."
+          : "Your article will be reviewed by an editor before it's published."}
       </div>
 
       <Formik
@@ -97,9 +151,15 @@ export default function ArticleForm({ edit = false }) {
         onSubmit={async (values, { setSubmitting, setStatus }) => {
           try {
             const payload = buildPayload(values, false);
-            if (edit) await updateBlog(id, payload);
-            else await createBlog(payload);
-            navigate("/my-articles");
+            if (adminMode) {
+              if (edit) await updateAdminBlog(id, payload);
+              else await createAdminBlog(payload);
+            } else if (edit) {
+              await updateBlog(id, payload);
+            } else {
+              await createBlog(payload);
+            }
+            navigate(articlesPath);
           } catch (err) {
             setStatus(err.message || "Failed to save");
           } finally {
@@ -107,8 +167,19 @@ export default function ArticleForm({ edit = false }) {
           }
         }}
       >
-        {({ isSubmitting, status, values }) => (
-          <Form>
+        {({ isSubmitting, status, values }) => {
+          const submitLabel = isSubmitting
+            ? "Saving…"
+            : adminMode && edit
+              ? "Save Changes"
+              : edit
+                ? "Save & Resubmit"
+                : adminMode
+                  ? "Create & Submit for Approval"
+                  : "Submit for Approval";
+
+          return (
+            <Form>
             <div className="mb-3">
               <label className="form-label">Title</label>
               <Field name="title" className="form-control" placeholder="An engaging headline" />
@@ -181,10 +252,10 @@ export default function ArticleForm({ edit = false }) {
                 style={{ background: "var(--holocene-green)", color: "var(--holocene-cream)" }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Saving…" : edit ? "Save & Resubmit" : "Submit for Approval"}
+                {submitLabel}
               </button>
 
-              {!edit && (
+              {!edit && !adminMode && (
                 <button
                   type="button"
                   className="btn"
@@ -198,7 +269,7 @@ export default function ArticleForm({ edit = false }) {
                     try {
                       const payload = buildPayload(values, true);
                       await createBlog(payload);
-                      navigate("/my-articles");
+                      navigate(articlesPath);
                     } catch (err) {
                       alert(err.message || "Failed to save draft");
                     }
@@ -211,13 +282,14 @@ export default function ArticleForm({ edit = false }) {
               <button
                 type="button"
                 className="btn btn-outline-dark"
-                onClick={() => navigate("/my-articles")}
+                onClick={() => navigate(articlesPath)}
               >
                 Cancel
               </button>
             </div>
-          </Form>
-        )}
+            </Form>
+          );
+        }}
       </Formik>
     </div>
   );

@@ -2,12 +2,17 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { resetPassword } from "../API/index.js";
 
+// 8–72 characters: at least one lowercase, one uppercase, one number, one special character; no spaces.
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{8,72}$/;
+
 export default function ResetPassword() {
   const { token } = useParams();
   const navigate = useNavigate();
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -16,6 +21,12 @@ export default function ResetPassword() {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+    if (!PASSWORD_PATTERN.test(newPassword)) {
+      setError(
+        "Use 8–72 characters with an uppercase letter, a lowercase letter, a number and a special character; no spaces"
+      );
       return;
     }
 
@@ -66,41 +77,71 @@ export default function ResetPassword() {
           Enter your new password below.
         </p>
 
-        {error && <div className="alert alert-danger py-2">{error}</div>}
+        {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
         {message && <div className="alert alert-success py-2">{message} Redirecting to login...</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="mb-3">
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.9rem" }}>New Password</label>
-            <input
-              type="password"
-              className="form-control"
-              placeholder="At least 4 characters"
-              required
-              minLength={4}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
+            <label htmlFor="reset-new-password" className="form-label" style={{ fontWeight: 600, fontSize: "0.9rem" }}>New Password</label>
+            <div className="input-group">
+              <input
+                id="reset-new-password"
+                type={showNew ? "text" : "password"}
+                className="form-control"
+                placeholder="8–72 characters, upper & lower case, number, symbol"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                maxLength={72}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowNew((s) => !s)}
+                aria-label={showNew ? "Hide password" : "Show password"}
+                aria-pressed={showNew}
+                title={showNew ? "Hide password" : "Show password"}
+              >
+                <i className={`bi ${showNew ? "bi-eye-slash" : "bi-eye"}`}></i>
+              </button>
+            </div>
           </div>
 
           <div className="mb-3">
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.9rem" }}>Confirm Password</label>
-            <input
-              type="password"
-              className="form-control"
-              placeholder="Re-enter new password"
-              required
-              minLength={4}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+            <label htmlFor="reset-confirm-password" className="form-label" style={{ fontWeight: 600, fontSize: "0.9rem" }}>Confirm Password</label>
+            <div className="input-group">
+              <input
+                id="reset-confirm-password"
+                type={showConfirm ? "text" : "password"}
+                className="form-control"
+                placeholder="Re-enter new password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                maxLength={72}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowConfirm((s) => !s)}
+                aria-label={showConfirm ? "Hide password" : "Show password"}
+                aria-pressed={showConfirm}
+                title={showConfirm ? "Hide password" : "Show password"}
+              >
+                <i className={`bi ${showConfirm ? "bi-eye-slash" : "bi-eye"}`}></i>
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             className="btn w-100"
             style={{ background: "var(--holocene-green)", color: "var(--holocene-cream)", fontWeight: 600 }}
-            disabled={loading}
+            disabled={loading || !!message}
           >
             {loading ? "Resetting..." : "Reset Password"}
           </button>

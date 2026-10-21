@@ -1,6 +1,9 @@
 const express = require("express");
 const {
   adminGetAllBlogs,
+  adminGetBlog,
+  adminCreateBlog,
+  adminUpdateBlog,
   approveBlog,
   rejectBlog,
   featureBlog,
@@ -15,6 +18,9 @@ const router = express.Router();
 router.use(verifyAdmin);
 
 router.get("/", adminGetAllBlogs);
+router.get("/:blogId", adminGetBlog);
+router.post("/", adminCreateBlog);
+router.patch("/:blogId", adminUpdateBlog);
 router.delete("/cleanup", cleanupOldBlogs);
 router.patch("/:blogId/approve", approveBlog);
 router.patch("/:blogId/reject", rejectBlog);

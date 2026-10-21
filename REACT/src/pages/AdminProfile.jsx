@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -12,7 +13,7 @@ const adminSchema = Yup.object({
 });
 
 export default function AdminProfile() {
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth.js";
 import { fileToBase64 } from "../utils/fileToBase64.js";
 import SocialAuthButtons from "../components/SocialAuthButtons.jsx";
+import PasswordInput from "../components/PasswordInput.jsx";
 
 // Local part as before; domain must end in a letters-only TLD of 2+ characters (rejects "a@b.1", "a@b")
 const EMAIL_PATTERN =
@@ -84,8 +85,6 @@ export default function Register() {
   const [otpError, setOtpError] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
   const [photoError, setPhotoError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(
     () => () => {
@@ -285,7 +284,7 @@ export default function Register() {
                         <span className="input-group-text" style={{ background: "var(--holocene-cream)", color: "var(--holocene-muted)" }}>@</span>
                         <Field id="register-tag" name="tag" className="form-control" autoComplete="username" maxLength={24} />
                       </div>
-                      <div className="form-text">4–24 letters and numbers, with at least one of each.</div>
+                      <div className="form-text"></div>
                       <ErrorMessage name="tag" component="div" className="text-danger small mt-1" />
                     </div>
 
@@ -305,54 +304,24 @@ export default function Register() {
 
                     <div className="mb-3">
                       <label htmlFor="register-password" className="form-label fw-semibold">Password</label>
-                      <div className="input-group">
-                        <Field
-                          id="register-password"
-                          type={showPassword ? "text" : "password"}
-                          name="password"
-                          className="form-control"
-                          autoComplete="new-password"
-                          maxLength={72}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-outline-secondary"
-                          onClick={() => setShowPassword((s) => !s)}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                          aria-pressed={showPassword}
-                          title={showPassword ? "Hide password" : "Show password"}
-                        >
-                          <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
-                        </button>
-                      </div>
-                      <div className="form-text">
-                        8+ characters with uppercase, lowercase, a number and a special character.
-                      </div>
+                      <PasswordInput
+                        id="register-password"
+                        name="password"
+                        autoComplete="new-password"
+                        maxLength={72}
+                      />
+                      <div className="form-text"></div>
                       <ErrorMessage name="password" component="div" className="text-danger small mt-1" />
                     </div>
 
                     <div className="mb-3">
                       <label htmlFor="register-confirm-password" className="form-label fw-semibold">Confirm Password</label>
-                      <div className="input-group">
-                        <Field
-                          id="register-confirm-password"
-                          type={showConfirm ? "text" : "password"}
-                          name="confirmPassword"
-                          className="form-control"
-                          autoComplete="new-password"
-                          maxLength={72}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-outline-secondary"
-                          onClick={() => setShowConfirm((s) => !s)}
-                          aria-label={showConfirm ? "Hide password" : "Show password"}
-                          aria-pressed={showConfirm}
-                          title={showConfirm ? "Hide password" : "Show password"}
-                        >
-                          <i className={`bi ${showConfirm ? "bi-eye-slash" : "bi-eye"}`}></i>
-                        </button>
-                      </div>
+                      <PasswordInput
+                        id="register-confirm-password"
+                        name="confirmPassword"
+                        autoComplete="new-password"
+                        maxLength={72}
+                      />
                       <ErrorMessage name="confirmPassword" component="div" className="text-danger small mt-1" />
                     </div>
 
@@ -372,7 +341,7 @@ export default function Register() {
                         borderRadius: 8,
                       }}
                     >
-                      {isSubmitting ? "Sending verification code…" : "Continue with email"}
+                      {isSubmitting ? "Sending verification code…" : "Continue"}
                     </button>
 
                     <SocialAuthButtons actionText="Sign up" />

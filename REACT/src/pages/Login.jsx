@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import SocialAuthButtons from "../components/SocialAuthButtons.jsx";
+import PasswordInput from "../components/PasswordInput.jsx";
 import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
@@ -23,7 +23,6 @@ const schema = Yup.object({
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="container my-5" style={{ maxWidth: 420 }}>
@@ -83,27 +82,13 @@ export default function Login() {
                     Forgot Password?
                   </Link>
                 </div>
-                <div className="input-group">
-                  <Field
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    className="form-control"
-                    placeholder="Your password"
-                    autoComplete="current-password"
-                    maxLength={72}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    aria-pressed={showPassword}
-                    title={showPassword ? "Hide password" : "Show password"}
-                  >
-                    <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
-                  </button>
-                </div>
+                <PasswordInput
+                  id="login-password"
+                  name="password"
+                  placeholder="Your password"
+                  autoComplete="current-password"
+                  maxLength={72}
+                />
                 <ErrorMessage name="password" component="div" className="text-danger small mt-1" />
               </div>
 

@@ -257,24 +257,24 @@ export default function SocialAuthButtons({ actionText = "Sign in" }) {
       <div className={pending ? "d-none" : ""}>
         <div className="d-flex align-items-center my-3">
           <hr className="flex-grow-1 my-0" style={{ borderColor: "var(--holocene-line)" }} />
-          <span className="px-2 text-muted" style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          {/* <span className="px-2 text-muted" style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             OR CONTINUE WITH
-          </span>
+          </span> */}
           <hr className="flex-grow-1 my-0" style={{ borderColor: "var(--holocene-line)" }} />
         </div>
 
         <div className="d-flex flex-column gap-2 align-items-center">
-          {GOOGLE_CLIENT_ID ? (
+          {/* {GOOGLE_CLIENT_ID ? (
             <div
               ref={googleButton}
               aria-label={`${actionText} with Google`}
               className={loading === "google" ? "pe-none opacity-50" : ""}
             />
-          ) : (
-            <p className="small text-muted mb-1">
-              Google sign-in is not configured.
-            </p>
-          )}
+          ) : 
+            //  <p className="small text-muted mb-1">
+            //   Google sign-in is not configured.
+            //  </p>
+          } */}
 
           <button
             type="button"
